@@ -37,7 +37,12 @@ func clientIP(r *http.Request) (string, error) {
 }
 
 // IPWhitelist takes a list of IPs and checks incoming requests for matches.
-func IPWhitelist(lookup map[string]bool) func(http.Handler) http.Handler {
+func IPWhitelist(whitelist []string) func(http.Handler) http.Handler {
+	lookup := make(map[string]bool, len(whitelist))
+	for _, ip := range whitelist {
+		lookup[ip] = true
+	}
+
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
