@@ -37,18 +37,13 @@ func clientIP(r *http.Request) (string, error) {
 }
 
 // IPWhitelist takes a list of IPs and checks incoming requests for matches.
-func IPWhitelist(whitelist []string) func(http.Handler) http.Handler {
-	lookup := make(map[string]bool, len(whitelist))
-	for _, ip := range whitelist {
-		lookup[ip] = true
-	}
-
+func IPWhitelist(whitelist map[string]bool) func(http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 			ip, _ := clientIP(r)
 
-			if !lookup[ip] {
+			if !whitelist[ip] {
 				msg := fmt.Sprintf("Client IP %s denied", ip)
 				w.WriteHeader(http.StatusForbidden)
 				w.Write([]byte(msg))
