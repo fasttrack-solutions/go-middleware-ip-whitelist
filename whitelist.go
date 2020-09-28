@@ -92,11 +92,15 @@ func IPWhitelist(whitelist map[string]bool, subnets []*net.IPNet) func(http.Hand
 			ctx := r.Context()
 			ip, _ := clientIP(r)
 
-			if !whitelist[ip] && !subnetContainsIP(ip, subnets) {
-				msg := fmt.Sprintf("Client IP %s denied", ip)
-				w.WriteHeader(http.StatusForbidden)
-				w.Write([]byte(msg))
-				return
+			if !whitelist[ip] {
+				allowed := subnetContainsIP(ip, subnets)
+				if !allowed {
+					w.WriteHeader(http.StatusForbidden)
+					w.Write([]byte(fmt.Sprintf("Client IP %s denied", ip)))
+					return
+				}
+
+				whitelist[ip] = true
 			}
 
 			h.ServeHTTP(w, r.WithContext(ctx))
