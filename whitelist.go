@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func clientIP(r *http.Request) (string, error) {
+func GetClientIP(r *http.Request) (string, error) {
 	ip := r.Header.Get("X-REAL-IP")
 	netIP := net.ParseIP(ip)
 	if netIP != nil {
@@ -90,7 +90,7 @@ func IPWhitelist(whitelist map[string]bool, subnets []*net.IPNet) func(http.Hand
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			ip, _ := clientIP(r)
+			ip, _ := GetClientIP(r)
 
 			if !whitelist[ip] {
 				allowed := subnetContainsIP(ip, subnets)
