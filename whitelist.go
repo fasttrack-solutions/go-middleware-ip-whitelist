@@ -8,10 +8,27 @@ import (
 )
 
 func GetClientIP(r *http.Request) (string, error) {
-	// SEC1-216: Cloudflare fronts all ingress and sets CF-Connecting-IP to the real client IP.
+	// SEC1-216: Cloudflare fronts all ingress and sets CF-Connecting-IP to the real
+	// client IP. It is authoritative when present and takes precedence over the
+	// (spoofable) X-Real-IP / X-Forwarded-For fallbacks kept below.
 	if cf := strings.TrimSpace(r.Header.Get("CF-Connecting-IP")); cf != "" {
 		if net.ParseIP(cf) != nil {
 			return cf, nil
+		}
+	}
+
+	ip := r.Header.Get("X-REAL-IP")
+	netIP := net.ParseIP(ip)
+	if netIP != nil {
+		return ip, nil
+	}
+
+	ips := r.Header.Get("X-FORWARDED-FOR")
+	splitIps := strings.Split(ips, ",")
+	for _, ip := range splitIps {
+		netIP := net.ParseIP(ip)
+		if netIP != nil {
+			return ip, nil
 		}
 	}
 
@@ -20,7 +37,8 @@ func GetClientIP(r *http.Request) (string, error) {
 		return "", err
 	}
 
-	if net.ParseIP(ip) != nil {
+	netIP = net.ParseIP(ip)
+	if netIP != nil {
 		return ip, nil
 	}
 
